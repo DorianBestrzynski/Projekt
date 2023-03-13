@@ -72,17 +72,6 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-
-  task-management:
-    build: task-management-service
-    mem_limit: 512m
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-    depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
         
   finance-optimizer:
     build: finance-optimizer-service
@@ -97,39 +86,6 @@ services:
 
   day-plan:
     build: day-plan-service
-    mem_limit: 512m
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-    depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-
-  availability:
-    build: availability-service
-    mem_limit: 512m
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-    depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-
-  transport:
-    build: transport-service
-    mem_limit: 512m
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-    depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-
-  accommodation:
-    build: accommodation-service
     mem_limit: 512m
     environment:
       - SPRING_PROFILES_ACTIVE=docker
