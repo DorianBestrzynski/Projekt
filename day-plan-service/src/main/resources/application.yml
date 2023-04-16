@@ -5,8 +5,6 @@ app.config-server: localhost
 app.database: localhost
 app.trip-group-service: localhost
 
-
-
 spring:
   cloud:
     config:
@@ -18,7 +16,7 @@ spring:
     password: postgres
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create-drop
     properties:
       hibernate:
         format_sql: true

@@ -59,8 +59,7 @@ class InvitationServiceTest {
     void shouldCorrectlyCreateInvitation() {
         //given
         mockAuthorizeCoordinatorAspect();
-        var tripGroup = new TripGroup("Test", Currency.PLN, "Desc", 1, "Raclawicka",
-                                      "Wroclaw" , 3, 3 );
+        var tripGroup = new TripGroup("Test", Currency.PLN, "Desc", "Racławcika, Wrocław");
 
         //when
         when(tripGroupService.getTripGroupById(1L)).thenReturn(tripGroup);
@@ -96,12 +95,12 @@ class InvitationServiceTest {
         tripGroup.setGroupId(1L);
         var invitation = new Invitation(token, tripGroup);
         var userGroupKey = new UserGroupKey(userId, tripGroup.getGroupId());
-        var expectedResult = new UserGroup(userGroupKey, Role.PARTICIPANT, 1);
+        var expectedResult = new UserGroup(userGroupKey, Role.PARTICIPANT);
 
         //when
         when(invitationRepository.findById(token)).thenReturn(Optional.of(invitation));
         when(userGroupService.exists(userGroupKey)).thenReturn(false);
-        when(userGroupService.createUserGroup(any(UserGroupKey.class), any(Role.class), anyInt())).thenReturn(expectedResult);
+        when(userGroupService.createUserGroup(any(UserGroupKey.class), any(Role.class))).thenReturn(expectedResult);
         invitationService.acceptInvitation(userId, token);
 
         //then

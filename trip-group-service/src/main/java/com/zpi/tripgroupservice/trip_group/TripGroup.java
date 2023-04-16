@@ -45,14 +45,8 @@ public class TripGroup {
     @Column(name = "description", length = 120)
     private String description;
 
-    @Column(name = "votes_limit")
-    private Integer votesLimit;
-
-    @Column(name = "start_location", nullable = false, length = 100)
-    private String startLocation;
-
-    @Column(name = "start_city", nullable = false, length = 100)
-    private String startCity;
+    @Column(name = "destination_location", nullable = false, length = 100)
+    private String destinationLocation;
 
     @Column(name = "start_date")
     private LocalDate startDate;
@@ -73,28 +67,19 @@ public class TripGroup {
     @OneToMany(mappedBy = "tripGroup", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private Set<Invitation> invitations = new HashSet<>();
 
-    @Column(name = "minimal_number_of_days", nullable = false)
-    private Integer minimalNumberOfDays;
 
-    @Column(name = "minimal_number_of_participants", nullable = false)
-    private Integer minimalNumberOfParticipants;
-
-    @Column(name = "selected_accommodation_id", nullable = true)
-    private Long selectedAccommodationId;
-
-    @Column(name = "selected_shared_availability")
-    private Long selectedSharedAvailability;
-
-    public TripGroup(String name, Currency currency, String description, Integer votesLimit, String startLocation, String startingCity, Integer minimalNumberOfDays, Integer minimalNumberOfParticipants) {
+    public TripGroup(String name, Currency currency, String description, String destinationLocation) {
         this.name = name;
         this.currency = currency;
         this.description = Objects.requireNonNullElse(description,DEFAULT_DESCRIPTION + name);
-        this.votesLimit = Objects.requireNonNullElse(votesLimit,DEFAULT_VOTES_LIMIT);
-        this.startLocation = startLocation;
-        this.startCity = startingCity;
-        this.groupStage = GroupStage.PLANNING_STAGE;
-        this.minimalNumberOfDays = Objects.requireNonNullElse(minimalNumberOfDays, 2);
-        this.minimalNumberOfParticipants = Objects.requireNonNullElse(minimalNumberOfParticipants, 2);
+        this.destinationLocation = destinationLocation;
+        this.groupStage = GroupStage.TRIP_STAGE;
+    }
+
+    public TripGroup(String name, Currency currency, String description) {
+        this.name = name;
+        this.currency = currency;
+        this.description = Objects.requireNonNullElse(description,DEFAULT_DESCRIPTION + name);
     }
 
     public void addInvitation(Invitation invitation) {

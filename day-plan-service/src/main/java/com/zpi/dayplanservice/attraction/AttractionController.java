@@ -16,7 +16,7 @@ public class AttractionController {
     private final AttractionService attractionService;
 
     @GetMapping()
-    public ResponseEntity<List<Attraction>> getAllAccommodationsForDay(@RequestParam Long groupId, @RequestParam Long dayPlanId){
+    public ResponseEntity<List<Attraction>> getAllAttractionsForDay(@RequestParam Long groupId, @RequestParam Long dayPlanId){
         var result = attractionService.getAllAttractionsForDay(groupId, dayPlanId);
         return ResponseEntity.ok(result);
     }

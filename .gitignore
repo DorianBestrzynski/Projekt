@@ -1,0 +1,3 @@
+# Project exclude paths
+/backend-auth/target/
+/day-plan-service/target/

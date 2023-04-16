@@ -34,14 +34,13 @@ public class InitializeData {
             return;
 
         var tripGroups = List.of(
-                new TripGroup("Test1", Currency.PLN, "Opis", 2, "Barcelona", "Barcelona", 3, 4),
-                new TripGroup("Test2", Currency.PLN, "Opis2", 3, "Madryt", "Madryt", 3, 5),
-                new TripGroup("Test3", Currency.USD, "Opis3", 4, "Wroclaw", "Wroclaw", 2, 5),
-                new TripGroup("Test4", Currency.PLN, "Opis4", 5, "Huelva", "Huelva", 3, 4),
-                new TripGroup("Test5", Currency.PLN, "Opis5", 6, "Pisa", "Pisa", 4, 6),
-                new TripGroup("Finance Optimizer", Currency.PLN, "Grupa testujaca optymalizacje", 6, "Pisa", "Pisa", 2, 5)
+                new TripGroup("Test1", Currency.PLN, "Opis", "Barcelona"),
+                new TripGroup("Test2", Currency.PLN, "Opis2", "Madryt"),
+                new TripGroup("Test3", Currency.USD, "Opis3", "Wroclaw"),
+                new TripGroup("Test4", Currency.PLN, "Opis4", "Huelva"),
+                new TripGroup("Test5", Currency.PLN, "Opis5", "Pisa"),
+                new TripGroup("Finance Optimizer", Currency.PLN, "Grupa testujaca optymalizacje", "Pisa")
         );
-        tripGroups.get(4).setSelectedAccommodationId(4L);
         tripGroups.get(4).setGroupStage(GroupStage.TRIP_STAGE);
         tripGroups.get(4).setStartDate(LocalDate.of(2022,10,10));
         tripGroups.get(4).setEndDate(LocalDate.of(2022,10,22));
@@ -51,17 +50,17 @@ public class InitializeData {
         tripGroupRepository.saveAll(tripGroups);
 
         userGroupRepository.saveAll(List.of(
-                new UserGroup(new UserGroupKey(1L, tripGroups.get(0).getGroupId()), Role.COORDINATOR, 1),
-                new UserGroup(new UserGroupKey(1L, tripGroups.get(1).getGroupId()), Role.COORDINATOR, 1),
-                new UserGroup(new UserGroupKey(1L, tripGroups.get(2).getGroupId()), Role.COORDINATOR, 1),
-                new UserGroup(new UserGroupKey(1L, tripGroups.get(3).getGroupId()), Role.COORDINATOR, 1),
-                new UserGroup(new UserGroupKey(2L, tripGroups.get(4).getGroupId()), Role.COORDINATOR, 1),
-                new UserGroup(new UserGroupKey(2L, tripGroups.get(0).getGroupId()), Role.PARTICIPANT, 1),
-                new UserGroup(new UserGroupKey(1L, tripGroups.get(5).getGroupId()), Role.COORDINATOR, 1),
-                new UserGroup(new UserGroupKey(3L, tripGroups.get(0).getGroupId()), Role.PARTICIPANT, 1),
-                new UserGroup(new UserGroupKey(3L, tripGroups.get(5).getGroupId()), Role.PARTICIPANT, 1),
-                new UserGroup(new UserGroupKey(4L, tripGroups.get(5).getGroupId()), Role.PARTICIPANT, 1),
-                new UserGroup(new UserGroupKey(4L, tripGroups.get(4).getGroupId()), Role.PARTICIPANT, 1)
+                new UserGroup(new UserGroupKey(1L, tripGroups.get(0).getGroupId()), Role.COORDINATOR),
+                new UserGroup(new UserGroupKey(1L, tripGroups.get(1).getGroupId()), Role.COORDINATOR),
+                new UserGroup(new UserGroupKey(1L, tripGroups.get(2).getGroupId()), Role.COORDINATOR),
+                new UserGroup(new UserGroupKey(1L, tripGroups.get(3).getGroupId()), Role.COORDINATOR),
+                new UserGroup(new UserGroupKey(2L, tripGroups.get(4).getGroupId()), Role.COORDINATOR),
+                new UserGroup(new UserGroupKey(2L, tripGroups.get(0).getGroupId()), Role.PARTICIPANT),
+                new UserGroup(new UserGroupKey(1L, tripGroups.get(5).getGroupId()), Role.COORDINATOR),
+                new UserGroup(new UserGroupKey(3L, tripGroups.get(0).getGroupId()), Role.PARTICIPANT),
+                new UserGroup(new UserGroupKey(3L, tripGroups.get(5).getGroupId()), Role.PARTICIPANT),
+                new UserGroup(new UserGroupKey(4L, tripGroups.get(5).getGroupId()), Role.PARTICIPANT),
+                new UserGroup(new UserGroupKey(4L, tripGroups.get(4).getGroupId()), Role.PARTICIPANT)
         ));
 
         var invitations = List.of(new Invitation("tripGroup1", tripGroups.get(0)),

@@ -84,6 +84,6 @@ public class InvitationService {
         if(userGroupService.exists(key))
             throw new IllegalArgumentException(ExceptionInfo.USER_ALREADY_MEMBER);
 
-        return userGroupService.createUserGroup(key, Role.PARTICIPANT, DEFAULT_VOTES_LIMIT);
+        return userGroupService.createUserGroup(key, Role.PARTICIPANT);
     }
 }

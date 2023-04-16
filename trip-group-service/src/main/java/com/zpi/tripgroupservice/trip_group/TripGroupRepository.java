@@ -13,7 +13,7 @@ public interface TripGroupRepository extends JpaRepository<TripGroup, Long> {
     @Query("SELECT tg FROM TripGroup tg JOIN UserGroup ug ON tg.groupId = ug.id.groupId AND ug.id.userId =?1")
     List<TripGroup> findAllGroupsForUser(Long userId);
 
-    @Query("SELECT new com.zpi.tripgroupservice.dto.TripDataDto(tg.startLocation, tg.startDate, tg.endDate, tg.latitude, tg.longitude) FROM TripGroup  tg WHERE tg.groupId =?1")
+    @Query("SELECT new com.zpi.tripgroupservice.dto.TripDataDto(tg.destinationLocation, tg.startDate, tg.endDate, tg.latitude, tg.longitude) FROM TripGroup  tg WHERE tg.groupId =?1")
     Optional<TripDataDto> findTripData(Long groupId);
 
 }

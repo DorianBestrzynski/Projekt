@@ -22,14 +22,6 @@ public class UserGroup {
     @Enumerated(EnumType.STRING)
     private Role role;
 
-    @Getter
-    @Column(name = "votes_remaining", nullable = false)
-    private Integer votesRemaining;
-
-    public UserGroup(UserGroupKey id, Role role) {
-        this.id = id;
-        this.role = role;
-    }
 }
 
 

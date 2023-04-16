@@ -1,8 +1,7 @@
 package com.zpi.dayplanservice.proxies;
 
 import com.zpi.dayplanservice.configuration.CustomFeignConfiguration;
-import com.zpi.dayplanservice.dto.AccommodationInfoDto;
-import feign.Headers;
+import com.zpi.dayplanservice.dto.GroupInformationDto;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -19,7 +18,7 @@ public interface TripGroupProxy {
     Boolean isUserPartOfTheGroup(@RequestHeader("innerCommunication") String header, @RequestParam("groupId") Long groupId, @RequestParam("userId") Long userId);
 
     @GetMapping( "/trip-group/accommodation")
-    AccommodationInfoDto getGroupAccommodation(@RequestHeader("innerCommunication") String header, @RequestParam("groupId") Long groupId);
+    GroupInformationDto getAccommodation(@RequestHeader("innerCommunication") String header, @RequestParam("groupId") Long groupId);
 }
 
 

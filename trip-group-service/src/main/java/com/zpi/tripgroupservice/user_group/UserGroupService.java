@@ -22,13 +22,13 @@ public class UserGroupService {
     private final AppUserProxy appUserProxy;
     private static final String INNER_COMMUNICATION = "microserviceCommunication";
 
-    public UserGroup createUserGroup(Long creatorId, Long groupId, Integer votesInGroup) {
-        var userGroup = new UserGroup(new UserGroupKey(creatorId,groupId), Role.COORDINATOR, votesInGroup);
+    public UserGroup createUserGroup(Long creatorId, Long groupId) {
+        var userGroup = new UserGroup(new UserGroupKey(creatorId,groupId), Role.COORDINATOR);
         return userGroupRepository.save(userGroup);
     }
 
-    public UserGroup createUserGroup(UserGroupKey key, Role role, Integer votesInGroup) {
-        var userGroup = new UserGroup(key, role, votesInGroup);
+    public UserGroup createUserGroup(UserGroupKey key, Role role) {
+        var userGroup = new UserGroup(key, role);
         return userGroupRepository.save(userGroup);
     }
 

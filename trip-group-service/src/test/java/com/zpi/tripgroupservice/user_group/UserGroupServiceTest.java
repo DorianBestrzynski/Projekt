@@ -35,11 +35,11 @@ class UserGroupServiceTest {
     @Test
     void shouldSuccessfullyCreateUserGroupWithCoordinatorRole() {
         //given
-        var expectedResult = new UserGroup(new UserGroupKey(1L,1L), Role.COORDINATOR, 1);
+        var expectedResult = new UserGroup(new UserGroupKey(1L,1L), Role.COORDINATOR);
 
         //when
         when(userGroupRepository.save(any(UserGroup.class))).thenAnswer(i -> i.getArguments()[0]);
-        var result = userGroupService.createUserGroup(1L, 1L, 1);
+        var result = userGroupService.createUserGroup(1L, 1L);
 
         //then
         assertThat(result).satisfies(
@@ -47,7 +47,6 @@ class UserGroupServiceTest {
                     assertThat(ug.getId().getUserId()).isEqualTo(expectedResult.getId().getUserId());
                     assertThat(ug.getId().getGroupId()).isEqualTo(expectedResult.getId().getGroupId());
                     assertThat(ug.getRole()).isEqualTo(expectedResult.getRole());
-                    assertThat(ug.getVotesRemaining()).isEqualTo(expectedResult.getVotesRemaining());
                 }
         );
         verify(userGroupRepository, times(1)).save(any());
@@ -56,11 +55,11 @@ class UserGroupServiceTest {
     @Test
     void shouldSuccessfullyCreateUserGroupWithGivenRole() {
         //given
-        var expectedResult = new UserGroup(new UserGroupKey(1L,1L), Role.COORDINATOR, 1);
+        var expectedResult = new UserGroup(new UserGroupKey(1L,1L), Role.COORDINATOR);
 
         //when
         when(userGroupRepository.save(any(UserGroup.class))).thenAnswer(i -> i.getArguments()[0]);
-        var result = userGroupService.createUserGroup(new UserGroupKey(1L, 1L), Role.COORDINATOR, 1);
+        var result = userGroupService.createUserGroup(new UserGroupKey(1L, 1L), Role.COORDINATOR);
 
         //then
         assertThat(result).satisfies(
@@ -68,7 +67,6 @@ class UserGroupServiceTest {
                     assertThat(ug.getId().getUserId()).isEqualTo(expectedResult.getId().getUserId());
                     assertThat(ug.getId().getGroupId()).isEqualTo(expectedResult.getId().getGroupId());
                     assertThat(ug.getRole()).isEqualTo(expectedResult.getRole());
-                    assertThat(ug.getVotesRemaining()).isEqualTo(expectedResult.getVotesRemaining());
                 }
         );
         verify(userGroupRepository, times(1)).save(any());
@@ -117,7 +115,7 @@ class UserGroupServiceTest {
     @Test
     void shouldReturnTrueIfUserIsCoordinator() {
         //given
-        var userGroup = new UserGroup(new UserGroupKey(1L, 1L), Role.COORDINATOR, 1);
+        var userGroup = new UserGroup(new UserGroupKey(1L, 1L), Role.COORDINATOR);
 
         //when
         when(userGroupRepository.findById(any(UserGroupKey.class))).thenReturn(Optional.of(userGroup));
@@ -142,7 +140,7 @@ class UserGroupServiceTest {
     @Test
     void shouldDeleteGroupCleanUp() {
         //given
-        var userGroups = List.of(new UserGroup(new UserGroupKey(1L, 1L), Role.COORDINATOR, 1));
+        var userGroups = List.of(new UserGroup(new UserGroupKey(1L, 1L), Role.COORDINATOR));
 
         //when
         when(userGroupRepository.findAllById_GroupId(anyLong())).thenReturn(userGroups);

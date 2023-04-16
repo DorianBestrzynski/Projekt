@@ -52,45 +52,6 @@ public class TripGroupController {
         return ResponseEntity.ok(tripData);
     }
 
-    @GetMapping("/transport-data")
-    public ResponseEntity<TripDataDto> getTripDataForTransport(@RequestParam Long groupId){
-        var tripData = tripGroupService.getTripDataForTransport(groupId);
-        return ResponseEntity.ok(tripData);
-    }
-
-    @GetMapping("/availability-info")
-    public ResponseEntity<AvailabilityConstraintsDto> getAvailabilityConstraints(@RequestParam Long groupId){
-        var availabilityConstraints = tripGroupService.getAvailabilityConstraints(groupId);
-        return ResponseEntity.ok(availabilityConstraints);
-    }
-
-    @GetMapping("/accommodation")
-    public ResponseEntity<AccommodationInfoDto> getAccommodation(@RequestParam Long groupId){
-        var accommodation = tripGroupService.getAccommodation(groupId);
-        return ResponseEntity.ok(accommodation);
-    }
-
-    @GetMapping("/accommodation-dto")
-    public ResponseEntity<AccommodationDto> getAccommodationDto(@RequestParam Long groupId){
-        var accommodation = tripGroupService.getAccommodationDto(groupId);
-        return ResponseEntity.ok(accommodation);
-    }
-
-    @PutMapping("/accommodation")
-    @ResponseStatus(HttpStatus.OK)
-    public void setSelectedAccommodation(@RequestParam Long groupId, @RequestParam Long accommodationId){
-        tripGroupService.setSelectedAccommodation(groupId, accommodationId);
-    }
-
-    @PostMapping("/availability")
-    @ResponseStatus(HttpStatus.OK)
-    public void setSelectedAvailability(@RequestBody SelectedAvailabilityDto selectedAvailabilityDto){
-        tripGroupService.setSelectedAvailability(selectedAvailabilityDto.groupId(),
-                                                 selectedAvailabilityDto.availabilityId(),
-                                                 selectedAvailabilityDto.startDate(),
-                                                 selectedAvailabilityDto.endDate());
-    }
-
     @PatchMapping("/currency")
     public ResponseEntity<TripGroup> setCurrency(@RequestParam Long groupId, @RequestParam Currency currency){
         var result = tripGroupService.setCurrencyInGroup(groupId, currency);
@@ -115,39 +76,32 @@ public class TripGroupController {
         tripGroupService.changeGroupStage(groupId);
     }
 
-    @PutMapping("/selected-availability")
-    @ResponseStatus(HttpStatus.OK)
-    public void unselectAvailability(@RequestParam Long groupId) {
-        tripGroupService.unselectAvailability(groupId);
+    @GetMapping("/accommodation")
+    public ResponseEntity<GroupInformationInfoDto> getAccommodation(@RequestParam Long groupId){
+        var accommodation = tripGroupService.getAccommodation(groupId);
+        return ResponseEntity.ok(accommodation);
     }
-
-    @PutMapping("/selected-accommodation")
-    @ResponseStatus(HttpStatus.OK)
-    public void unselectAccommodation(@RequestParam Long groupId) {
-        tripGroupService.unselectAccommodation(groupId);
-    }
-
 
     @GetMapping("/sampleData")
     public String creatingSampleData() {
-        var tripGroup = new TripGroup("Test1", Currency.PLN, "Opis", 2, "Barcelona", "Barcelona",3,3);
-        var tripGroup1 = new TripGroup("Test2", Currency.PLN, "Opis2", 3, "Madryt", "Madryt",3,5);
-        var tripGroup2 = new TripGroup("Test3", Currency.USD, "Opis3", 4, "Wroclaw", "Wroclaw",2,5);
-        var tripGroup3 = new TripGroup("Test4", Currency.PLN, "Opis4", 5, "Huelva", "Huelva",3,4);
-        var tripGroup4 = new TripGroup("Test5", Currency.PLN, "Opis5", 6, "Pisa", "Pisa",4,6);
-        var tripGroup5 = new TripGroup("Finance Optimizer", Currency.PLN, "Grupa testujaca optymalizacje", 6, "Pisa", "Pisa", 2 ,5);
+        var tripGroup = new TripGroup("Test1", Currency.PLN, "Opis");
+        var tripGroup1 = new TripGroup("Test2", Currency.PLN, "Opis2");
+        var tripGroup2 = new TripGroup("Test3", Currency.USD, "Opis3");
+        var tripGroup3 = new TripGroup("Test4", Currency.PLN, "Opis4");
+        var tripGroup4 = new TripGroup("Test5", Currency.PLN, "Opis5");
+        var tripGroup5 = new TripGroup("Finance Optimizer", Currency.PLN, "Grupa testujaca optymalizacje");
         tripGroupRepository.saveAll(List.of(tripGroup1, tripGroup2, tripGroup3, tripGroup4, tripGroup, tripGroup5));
 
-        var userData1 = new UserGroup(new UserGroupKey(1L, tripGroup.getGroupId()), Role.COORDINATOR, 1);
-        var userData2 = new UserGroup(new UserGroupKey(1L, tripGroup1.getGroupId()), Role.COORDINATOR, 1);
-        var userData3 = new UserGroup(new UserGroupKey(1L, tripGroup2.getGroupId()), Role.COORDINATOR, 1);
-        var userData4 = new UserGroup(new UserGroupKey(1L, tripGroup3.getGroupId()), Role.COORDINATOR, 1);
-        var userData5 = new UserGroup(new UserGroupKey(2L, tripGroup4.getGroupId()), Role.COORDINATOR, 1);
-        var userData6 = new UserGroup(new UserGroupKey(2L, tripGroup1.getGroupId()), Role.PARTICIPANT, 1);
-        var userData7 = new UserGroup(new UserGroupKey(1L, tripGroup5.getGroupId()), Role.COORDINATOR, 1);
-        var userData8 = new UserGroup(new UserGroupKey(2L, tripGroup5.getGroupId()), Role.PARTICIPANT, 1);
-        var userData9 = new UserGroup(new UserGroupKey(3L, tripGroup5.getGroupId()), Role.PARTICIPANT, 1);
-        var userData10 = new UserGroup(new UserGroupKey(4L, tripGroup5.getGroupId()), Role.PARTICIPANT, 1);
+        var userData1 = new UserGroup(new UserGroupKey(1L, tripGroup.getGroupId()), Role.COORDINATOR);
+        var userData2 = new UserGroup(new UserGroupKey(1L, tripGroup1.getGroupId()), Role.COORDINATOR);
+        var userData3 = new UserGroup(new UserGroupKey(1L, tripGroup2.getGroupId()), Role.COORDINATOR);
+        var userData4 = new UserGroup(new UserGroupKey(1L, tripGroup3.getGroupId()), Role.COORDINATOR);
+        var userData5 = new UserGroup(new UserGroupKey(2L, tripGroup4.getGroupId()), Role.COORDINATOR);
+        var userData6 = new UserGroup(new UserGroupKey(2L, tripGroup1.getGroupId()), Role.PARTICIPANT);
+        var userData7 = new UserGroup(new UserGroupKey(1L, tripGroup5.getGroupId()), Role.COORDINATOR);
+        var userData8 = new UserGroup(new UserGroupKey(2L, tripGroup5.getGroupId()), Role.PARTICIPANT);
+        var userData9 = new UserGroup(new UserGroupKey(3L, tripGroup5.getGroupId()), Role.PARTICIPANT);
+        var userData10 = new UserGroup(new UserGroupKey(4L, tripGroup5.getGroupId()), Role.PARTICIPANT);
 
 
         userGroupRepository.saveAll(List.of(userData1, userData2, userData3, userData4, userData5, userData6, userData7, userData8, userData9, userData10));

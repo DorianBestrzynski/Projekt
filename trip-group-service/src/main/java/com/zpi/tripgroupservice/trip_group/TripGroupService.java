@@ -11,18 +11,14 @@ import com.zpi.tripgroupservice.exception.ApiRequestException;
 import com.zpi.tripgroupservice.exception.ExceptionInfo;
 import com.zpi.tripgroupservice.google_api.Geolocation;
 import com.zpi.tripgroupservice.mapper.MapStructMapper;
-import com.zpi.tripgroupservice.proxy.AccommodationProxy;
-import com.zpi.tripgroupservice.proxy.AvailabilityProxy;
 import com.zpi.tripgroupservice.proxy.FinanceProxy;
 import com.zpi.tripgroupservice.security.CustomUsernamePasswordAuthenticationToken;
 import com.zpi.tripgroupservice.user_group.UserGroupService;
 import lombok.RequiredArgsConstructor;
-import org.apache.http.client.HttpClient;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
-import java.time.LocalDate;
 import java.util.List;
 
 import static com.zpi.tripgroupservice.commons.Utils.LATITUDE_INDEX;
@@ -37,8 +33,6 @@ public class TripGroupService {
     private final MapStructMapper mapstructMapper;
     private final Geolocation geolocation;
     private final FinanceProxy financeProxy;
-    private final AccommodationProxy accommodationProxy;
-    private final AvailabilityProxy availabilityProxy;
     private static final String INNER_COMMUNICATION = "microserviceCommunication";
 
 
@@ -53,18 +47,12 @@ public class TripGroupService {
                         group.getName(),
                         group.getCurrency(),
                         group.getDescription(),
-                        group.getVotesLimit(),
-                        group.getStartLocation(),
-                        group.getStartCity(),
+                        group.getDestinationLocation(),
                         group.getStartDate(),
                         group.getEndDate(),
                         group.getLatitude(),
                         group.getLongitude(),
                         group.getGroupStage(),
-                        group.getMinimalNumberOfDays(),
-                        group.getMinimalNumberOfParticipants(),
-                        group.getSelectedAccommodationId(),
-                        group.getSelectedSharedAvailability(),
                         userGroupService.getNumberOfParticipants(group.getGroupId())
                 )).toList();
     }
@@ -81,14 +69,12 @@ public class TripGroupService {
     @Transactional
     public TripGroup createGroup(TripGroupDto groupDto) {
         CustomUsernamePasswordAuthenticationToken authentication = (CustomUsernamePasswordAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
-        var tripGroup = new TripGroup(groupDto.name(),groupDto.currency(),groupDto.description(), groupDto.votesLimit(),
-                                          groupDto.startLocation(), groupDto.startCity(),
-                                          groupDto.minimalNumberOfDays(), groupDto.minimalNumberOfParticipants());
-            var coordinates = geolocation.findCoordinates(groupDto.startLocation());
+        var tripGroup = new TripGroup(groupDto.name(),groupDto.currency(),groupDto.description(), groupDto.destinationLocation());
+            var coordinates = geolocation.findCoordinates(groupDto.destinationLocation());
             tripGroup.setLatitude(coordinates[LATITUDE_INDEX]);
             tripGroup.setLongitude(coordinates[LONGITUDE_INDEX]);
             tripGroupRepository.save(tripGroup);
-            userGroupService.createUserGroup(authentication.getUserId(), tripGroup.getGroupId(), tripGroup.getVotesLimit());
+            userGroupService.createUserGroup(authentication.getUserId(), tripGroup.getGroupId());
             return tripGroup;
     }
 
@@ -109,15 +95,12 @@ public class TripGroupService {
         var tripGroup = tripGroupRepository.findById(groupId).orElseThrow(() -> new ApiRequestException(
                 ExceptionInfo.GROUP_NOT_FOUND));
         mapstructMapper.updateFromTripGroupDtoToTripGroup(tripGroup,tripGroupDto);
-        if(tripGroupDto.startLocation() != null) {
-            var coordinates = geolocation.findCoordinates(tripGroupDto.startLocation());
+        if(tripGroupDto.destinationLocation() != null) {
+            var coordinates = geolocation.findCoordinates(tripGroupDto.destinationLocation());
             tripGroup.setLatitude(coordinates[LATITUDE_INDEX]);
             tripGroup.setLongitude(coordinates[LONGITUDE_INDEX]);
         }
         tripGroupRepository.save(tripGroup);
-        if(tripGroupDto.minimalNumberOfDays() != null || tripGroupDto.minimalNumberOfParticipants() != null) {
-            availabilityProxy.triggerAvailabilityGenerationParams(INNER_COMMUNICATION, groupId, tripGroupDto.minimalNumberOfDays(), tripGroupDto.minimalNumberOfParticipants());
-        }
         return tripGroup;
     }
 
@@ -130,69 +113,15 @@ public class TripGroupService {
                 group.getName(),
                 group.getCurrency(),
                 group.getDescription(),
-                group.getVotesLimit(),
-                group.getStartLocation(),
-                group.getStartCity(),
+                group.getDestinationLocation(),
                 group.getStartDate(),
                 group.getEndDate(),
                 group.getLatitude(),
                 group.getLongitude(),
                 group.getGroupStage(),
-                group.getMinimalNumberOfDays(),
-                group.getMinimalNumberOfParticipants(),
-                group.getSelectedAccommodationId(),
-                group.getSelectedSharedAvailability(),
                 numOfParticipants);
     }
 
-
-    public AvailabilityConstraintsDto getAvailabilityConstraints(Long groupId) {
-        var tripGroup = tripGroupRepository.findById(groupId).orElseThrow(() -> new ApiRequestException(
-                GROUP_NOT_FOUND));
-        return new AvailabilityConstraintsDto(tripGroup.getMinimalNumberOfDays(), tripGroup.getMinimalNumberOfParticipants(), tripGroup.getSelectedSharedAvailability());
-        }
-
-    public AccommodationInfoDto getAccommodation(Long groupId) {
-        if(groupId == null || groupId < 0){
-            throw new IllegalArgumentException(ExceptionInfo.INVALID_GROUP_ID);
-        }
-
-        var tripGroup = tripGroupRepository.findById(groupId)
-                                           .orElseThrow(() -> new ApiRequestException(GROUP_NOT_FOUND));
-
-        if(tripGroup.getSelectedAccommodationId() != null)
-            return accommodationProxy.getAccommodationInfo(INNER_COMMUNICATION, tripGroup.getSelectedAccommodationId());
-
-        return new AccommodationInfoDto();
-    }
-
-    public AccommodationDto getAccommodationDto(Long groupId) {
-        if(groupId == null || groupId < 0){
-            throw new IllegalArgumentException(ExceptionInfo.INVALID_GROUP_ID);
-        }
-
-        var tripGroup = tripGroupRepository.findById(groupId)
-                                           .orElseThrow(() -> new ApiRequestException(GROUP_NOT_FOUND));
-
-        if(tripGroup.getSelectedAccommodationId() != null)
-            return accommodationProxy.getAccommodation(INNER_COMMUNICATION, tripGroup.getSelectedAccommodationId());
-
-        return new AccommodationDto();
-    }
-
-    @Transactional
-    public TripGroup setSelectedAccommodation(Long groupId, Long accommodationId) {
-        if(groupId == null || accommodationId == null)
-            throw new IllegalArgumentException(
-                    ExceptionInfo.INVALID_GROUP_ID + "or" + ExceptionInfo.INVALID_ACCOMMODATION_ID);
-
-        var tripGroup = tripGroupRepository.findById(groupId)
-                                           .orElseThrow(() -> new ApiRequestException(GROUP_NOT_FOUND));
-
-        tripGroup.setSelectedAccommodationId(accommodationId);
-        HttpClient http = HttpC
-        return tripGroupRepository.save(tripGroup);
-    }
 
     @Transactional
     @AuthorizeCoordinator
@@ -221,16 +150,6 @@ public class TripGroupService {
         }
     }
 
-    @Transactional
-    public void setSelectedAvailability(Long groupId, Long availabilityId, LocalDate startDate, LocalDate endDate) {
-        var tripGroup = tripGroupRepository.findById(groupId)
-                .orElseThrow(() -> new ApiRequestException(ExceptionInfo.GROUP_NOT_FOUND));
-
-        tripGroup.setSelectedSharedAvailability(availabilityId);
-        tripGroup.setStartDate(startDate);
-        tripGroup.setEndDate(endDate);
-        tripGroupRepository.save(tripGroup);
-    }
 
     @Transactional
     public void changeGroupStage(Long groupId) {
@@ -244,26 +163,6 @@ public class TripGroupService {
         tripGroupRepository.save(tripGroup);
     }
 
-    @Transactional
-    public void unselectAvailability(Long groupId) {
-        var tripGroup = tripGroupRepository.findById(groupId)
-                .orElseThrow(() -> new ApiRequestException(ExceptionInfo.GROUP_NOT_FOUND));
-        tripGroup.setSelectedSharedAvailability(null);
-        availabilityProxy.triggerAvailabilityGeneration(INNER_COMMUNICATION, groupId);
-        tripGroupRepository.save(tripGroup);
-    }
-
-    @Transactional
-    public void unselectAccommodation(Long groupId) {
-        var tripGroup = tripGroupRepository.findById(groupId)
-                .orElseThrow(() -> new ApiRequestException(ExceptionInfo.GROUP_NOT_FOUND));
-        tripGroup.setSelectedAccommodationId(null);
-        tripGroupRepository.save(tripGroup);
-    }
-
-    public TripDataDto getTripDataForTransport(Long groupId) {
-        return tripGroupRepository.findTripData(groupId).orElseThrow(() -> new ApiRequestException(GROUP_NOT_FOUND));
-    }
 
     @Transactional
     @AuthorizeCoordinator
@@ -275,16 +174,20 @@ public class TripGroupService {
 
     public void deletingUserCleanUp(Long userId, Long groupId, GroupStage groupStage) {
         switch (groupStage) {
-            case PLANNING_STAGE -> planningStageCleanUp(userId, groupId);
             case TRIP_STAGE, AFTER_TRIP_STAGE -> afterPlanningStageCheck(groupId, userId);
         }
     }
 
-    private void planningStageCleanUp(Long userId, Long groupId) {
-        if (userGroupService.getAllCoordinatorsIdsInGroup(groupId).size() == 1 && userGroupService.isUserCoordinator(userId, groupId)) {
-            throw new ApiPermissionException(ExceptionInfo.LAST_COORDINATOR);
+    public GroupInformationInfoDto getAccommodation(Long groupId) {
+        if(groupId == null || groupId < 0){
+            throw new IllegalArgumentException(ExceptionInfo.INVALID_GROUP_ID);
         }
-        availabilityProxy.deleteAllAvailabilitiesForUser(INNER_COMMUNICATION, userId, groupId);
-        accommodationProxy.deleteAllVotesForUserInGivenGroup(INNER_COMMUNICATION, userId, groupId);
+
+        var tripGroup = tripGroupRepository.findById(groupId)
+                .orElseThrow(() -> new ApiRequestException(GROUP_NOT_FOUND));
+
+        return new GroupInformationInfoDto(tripGroup.getDestinationLocation(), tripGroup.getLatitude(), tripGroup.getLongitude(), groupId);
     }
+
+
 }

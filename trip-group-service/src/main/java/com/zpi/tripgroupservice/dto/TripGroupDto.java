@@ -18,22 +18,10 @@ public record TripGroupDto(
         @Length(max = 120)
         @JsonProperty("description")
         String description,
-        @JsonProperty("votesLimit")
-        Integer votesLimit,
         @NotEmpty
         @Length(max = 100)
         @JsonProperty("startLocation")
-        String startLocation,
-        @NotEmpty
-        @Length(max = 100)
-        @JsonProperty("startCity")
-        String startCity,
-
-        @JsonProperty("minimalNumberOfDays")
-        Integer minimalNumberOfDays,
-
-        @JsonProperty("minimalNumberOfParticipants")
-        Integer minimalNumberOfParticipants
+        String destinationLocation
 )
 {
 }

@@ -7,12 +7,9 @@ import com.zpi.tripgroupservice.exception.ApiPermissionException;
 import com.zpi.tripgroupservice.exception.ApiRequestException;
 import com.zpi.tripgroupservice.google_api.Geolocation;
 import com.zpi.tripgroupservice.mapper.MapStructMapper;
-import com.zpi.tripgroupservice.proxy.AccommodationProxy;
-import com.zpi.tripgroupservice.proxy.AvailabilityProxy;
 import com.zpi.tripgroupservice.proxy.FinanceProxy;
 import com.zpi.tripgroupservice.security.CustomUsernamePasswordAuthenticationToken;
 import com.zpi.tripgroupservice.user_group.UserGroupService;
-import net.bytebuddy.asm.Advice;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -24,7 +21,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -53,12 +49,6 @@ class TripGroupServiceTest {
     @MockBean
     FinanceProxy financeProxy;
 
-    @MockBean
-    AccommodationProxy accommodationProxy;
-
-    @MockBean
-    AvailabilityProxy availabilityProxy;
-
     @Captor
     ArgumentCaptor<TripGroup> tripGroupArgumentCaptor;
 
@@ -86,8 +76,7 @@ class TripGroupServiceTest {
     @Test
     void shouldGetAllGroupsForUser() {
         //given
-        var groups = List.of(new TripGroup("Test", Currency.PLN, "Desc", 1, "Raclawicka",
-                                           "Wroclaw" , 3, 3 ));
+        var groups = List.of(new TripGroup("Test", Currency.PLN, "Desc", "Wroclaw"));
         groups.get(0).setGroupId(0L);
 
         //when
@@ -95,9 +84,8 @@ class TripGroupServiceTest {
         when(userGroupService.getNumberOfParticipants(any())).thenReturn(2);
         var actualResult = tripGroupService.getAllGroupsForUser(1L);
 
-        var expectedGroups = List.of(new TripExtendedDataDto(0L,"Test", Currency.PLN, "Desc", 1, "Raclawicka",
-                "Wroclaw", null, null, null, null, GroupStage.PLANNING_STAGE,
-                3, 3, null, null, 2));
+        var expectedGroups = List.of(new TripExtendedDataDto(0L,"Test", Currency.PLN, "Desc", "Wrocław"
+        , null, null, null, null, null ,null));
         //then
         verify(tripGroupRepository, times(1)).findAllGroupsForUser(anyLong());
         verify(userGroupService, times(1)).getNumberOfParticipants(any());
@@ -119,8 +107,7 @@ class TripGroupServiceTest {
     void shouldReturnTripGroupById() {
         //given
         mockAuthorizePartOfTheGroupAspect();
-        var group = new TripGroup("Test", Currency.PLN, "Desc", 1, "Raclawicka",
-                "Wroclaw" , 3, 3 );
+        var group = new TripGroup("Name", Currency.PLN, "Desc", "Wroclaw");
 
         //when
         when(tripGroupRepository.findById(anyLong())).thenReturn(Optional.of(group));
@@ -164,8 +151,7 @@ class TripGroupServiceTest {
     void shouldSuccessfullyCreateGroup() {
         mockCustomUsernamePasswordAuthentication();
         //given
-        var tripGroupDto = new TripGroupDto("Name", Currency.PLN, "Desc", 1,
-                                            "Raclawicka", "Wroclaw", 1, 1);
+        var tripGroupDto = new TripGroupDto("Name", Currency.PLN, "Desc", "Wroclaw");
         Double[] coordinates = { 11.22, 22.33 };
 
         //when
@@ -173,14 +159,13 @@ class TripGroupServiceTest {
         var actualTripGroup = tripGroupService.createGroup(tripGroupDto);
 
         //then
-        var expectedTripGroup = new TripGroup("Name", Currency.PLN, "Desc", 1, "Raclawicka",
-                "Wroclaw" , 1, 1 );
+        var expectedTripGroup = new TripGroup("Name", Currency.PLN, "Desc", "Raclawicka");
         expectedTripGroup.setLatitude(11.22);
         expectedTripGroup.setLongitude(22.33);
         assertThat(actualTripGroup).isEqualTo(expectedTripGroup);
         verify(geolocation, times(1)).findCoordinates(anyString());
         verify(tripGroupRepository, times(1)).save(any());
-        verify(userGroupService, times(1)).createUserGroup(anyLong(), any(), anyInt());
+        verify(userGroupService, times(1)).createUserGroup(anyLong(), any());
     }
 
     @Test
@@ -215,19 +200,15 @@ class TripGroupServiceTest {
     void shouldCorrectlyUpdateTripGroup() {
         //given
         mockAuthorizeCoordinatorAspect();
-        var tripGroupDto = new TripGroupDto("Name", Currency.EUR, "Updated Desc", 1,
-                null, "China", 1, 1);
-        var tripGroup = new TripGroup("Name", Currency.PLN, "Desc", 1, "Raclawicka",
-                "Wroclaw" , 1, 2 );
+        var tripGroupDto = new TripGroupDto("Name", Currency.EUR, "Updated Desc", "China");
+        var tripGroup = new TripGroup("Name", Currency.PLN, "Desc", "Wroclaw");
 
         //when
         when(tripGroupRepository.findById(anyLong())).thenReturn(Optional.of(tripGroup));
-        when(availabilityProxy.triggerAvailabilityGenerationParams(any(), anyLong(), anyInt(), anyInt())).thenReturn("Str");
         var actualTripGroup = tripGroupService.updateGroup(1L, tripGroupDto);
 
         //then
-        var expectedTripGroup = new TripGroup("Name", Currency.EUR, "Updated Desc", 1, "Raclawicka",
-                "China" , 1, 1 );
+        var expectedTripGroup = new TripGroup("Name", Currency.PLN, "Desc", "Wroclaw");
         assertThat(actualTripGroup).isEqualTo(expectedTripGroup);
         verify(tripGroupRepository, times(1)).save(any());
         verify(tripGroupRepository, times(1)).findById(anyLong());
@@ -252,8 +233,7 @@ class TripGroupServiceTest {
     @Test
     void shouldGetTripData() {
         //given
-        var tripGroup = new TripGroup("Name", Currency.PLN, "Desc", 1, "Raclawicka",
-                "Wroclaw" , 3, 3 );
+        var tripGroup = new TripGroup("Name", Currency.PLN, "Desc", "Wroclaw");
         tripGroup.setGroupId(1L);
         //when
         when(tripGroupRepository.findById(anyLong())).thenReturn(Optional.of(tripGroup));
@@ -262,10 +242,8 @@ class TripGroupServiceTest {
 
         //then
         var expectedResult = new TripExtendedDataDto(tripGroup.getGroupId(), tripGroup.getName(), tripGroup.getCurrency(), tripGroup.getDescription(),
-                tripGroup.getVotesLimit(), tripGroup.getStartLocation(), tripGroup.getStartCity(), tripGroup.getStartDate(),
-                tripGroup.getEndDate(), tripGroup.getLatitude(), tripGroup.getLongitude(), tripGroup.getGroupStage(),
-                tripGroup.getMinimalNumberOfDays(), tripGroup.getMinimalNumberOfParticipants(), tripGroup.getSelectedAccommodationId(),
-                tripGroup.getSelectedSharedAvailability(), 2);
+                tripGroup.getDestinationLocation(), tripGroup.getStartDate(),
+                tripGroup.getEndDate(), tripGroup.getLatitude(), tripGroup.getLongitude(), tripGroup.getGroupStage(), 2);
         assertThat(actualResult).isEqualTo(expectedResult);
         verify(tripGroupRepository, times(1)).findById(anyLong());
         verify(userGroupService, times(1)).getNumberOfParticipants(anyLong());
@@ -283,147 +261,13 @@ class TripGroupServiceTest {
         verify(tripGroupRepository, times(1)).findById(anyLong());
     }
 
-    @Test
-    void shouldReturnAvailabilityConstraints() {
-        //given
-        var tripGroup = new TripGroup("Name", Currency.PLN, "Desc", 1, "Raclawicka",
-                "Wroclaw" , 3, 3 );
-        tripGroup.setSelectedSharedAvailability(1L);
-
-        //when
-        when(tripGroupRepository.findById(anyLong())).thenReturn(Optional.of(tripGroup));
-        var actualResult = tripGroupService.getAvailabilityConstraints(1L);
-
-        //then
-        var expectedResult = new AvailabilityConstraintsDto(3, 3, 1L);
-        assertThat(actualResult).isEqualTo(expectedResult);
-        verify(tripGroupRepository, times(1)).findById(anyLong());
-    }
-
-    @Test
-    void shouldThrowErrorWhenTripGroupNotFoundAvailabilityConstraint() {
-        //when
-        when(tripGroupRepository.findById(anyLong())).thenReturn(Optional.empty());
-        var exception = assertThrows(ApiRequestException.class,
-                () -> tripGroupService.getAvailabilityConstraints(1L));
-
-        //then
-        assertThat(exception.getMessage()).isEqualTo("There is no group with given group_id ");
-        verify(tripGroupRepository, times(1)).findById(anyLong());
-    }
-
-    @Test
-    void shouldSuccessfullyGetAccommodation() {
-        //given
-        var tripGroup = new TripGroup("Name", Currency.PLN, "Desc", 1, "Raclawicka",
-                "Wroclaw" , 3, 3 );
-        tripGroup.setSelectedAccommodationId(1L);
-
-        //when
-        when(tripGroupRepository.findById(anyLong())).thenReturn(Optional.of(tripGroup));
-        tripGroupService.getAccommodation(1L);
-
-        //then
-        verify(tripGroupRepository, times(1)).findById(anyLong());
-        verify(accommodationProxy, times(1)).getAccommodationInfo(anyString(), anyLong());
-    }
-
-    @Test
-    void shouldReturnEmptyAccommodation() {
-        //given
-        var tripGroup = new TripGroup("Name", Currency.PLN, "Desc", 1, "Raclawicka",
-                "Wroclaw" , 3, 3 );
-        tripGroup.setSelectedAccommodationId(null);
-
-        //when
-        when(tripGroupRepository.findById(anyLong())).thenReturn(Optional.of(tripGroup));
-        var actualResult = tripGroupService.getAccommodation(1L);
-
-        //then
-        var expectedResult = new AccommodationInfoDto();
-        assertThat(actualResult).isEqualTo(expectedResult);
-        verify(tripGroupRepository, times(1)).findById(anyLong());
-        verify(accommodationProxy, never()).getAccommodationInfo(anyString(), anyLong());
-    }
-
-    @Test
-    void shouldThrowExceptionWhenGroupIdNotValid() {
-        //when
-        var exception = assertThrows(IllegalArgumentException.class,
-                () -> tripGroupService.getAccommodation(null));
-
-        //then
-        assertThat(exception.getMessage()).isEqualTo("Group id is invalid. Id must be a positive number");
-        verify(tripGroupRepository, never()).findById(anyLong());
-        verify(accommodationProxy, never()).getAccommodationInfo(anyString(), anyLong());
-    }
-
-    @Test
-    void shouldThrowExceptionWhenTripGroupNotFoundGetAccommodation() {
-        //when
-        when(tripGroupRepository.findById(anyLong())).thenReturn(Optional.empty());
-        var exception = assertThrows(ApiRequestException.class,
-                () -> tripGroupService.getAccommodation(1L));
-
-        //then
-        assertThat(exception.getMessage()).isEqualTo("There is no group with given group_id ");
-        verify(tripGroupRepository, times(1)).findById(anyLong());
-        verify(accommodationProxy, never()).getAccommodationInfo(anyString(), anyLong());
-    }
-
-
-    @Test
-    void shouldSuccessfullySetAccommodation() {
-        //given
-        var tripGroup = new TripGroup("Name", Currency.PLN, "Desc", 1, "Raclawicka",
-                "Wroclaw" , 3, 3 );
-
-        //when
-        when(tripGroupRepository.findById(anyLong())).thenReturn(Optional.of(tripGroup));
-        when(tripGroupRepository.save(any(TripGroup.class))).thenAnswer(s -> s.getArguments()[0]);
-
-        var actualResult = tripGroupService.setSelectedAccommodation(1L, 1L);
-        //then
-        var expectedResult = new TripGroup();
-        expectedResult.setSelectedAccommodationId(1L);
-        assertThat(actualResult.getSelectedAccommodationId()).isEqualTo(expectedResult.getSelectedAccommodationId());
-        verify(tripGroupRepository, times(1)).findById(anyLong());
-        verify(tripGroupRepository, times(1)).save(any(TripGroup.class));
-    }
-
-    @Test
-    void shouldThrowExceptionWhenGroupIdOrAccommodationIdNotValid() {
-        //when
-        var exception = assertThrows(IllegalArgumentException.class,
-                () -> tripGroupService.setSelectedAccommodation(1L, null));
-
-        //then
-        assertThat(exception.getMessage()).isEqualTo("Group id is invalid. Id must be a positive number" + "or"
-                + "Invalid accommodation id");
-        verify(tripGroupRepository, never()).findById(anyLong());
-        verify(accommodationProxy, never()).getAccommodationInfo(anyString(), anyLong());
-    }
-
-    @Test
-    void shouldThrowExceptionWhenTripGroupNotFoundSetAccommodation() {
-        //when
-        when(tripGroupRepository.findById(anyLong())).thenReturn(Optional.empty());
-        var exception = assertThrows(ApiRequestException.class,
-                () -> tripGroupService.setSelectedAccommodation(1L, 1L));
-
-        //then
-        assertThat(exception.getMessage()).isEqualTo("There is no group with given group_id ");
-        verify(tripGroupRepository, times(1)).findById(anyLong());
-        verify(accommodationProxy, never()).getAccommodationInfo(anyString(), anyLong());
-    }
 
     @Test
     void shouldCorrectlySetCurrencyInGroup() {
         //given
         mockAuthorizeCoordinatorAspect();
         var currency = Currency.EUR;
-        var tripGroup = new TripGroup("Name", Currency.PLN, "Desc", 1, "Raclawicka",
-                "Wroclaw" , 3, 3 );
+        var tripGroup = new TripGroup("Name", Currency.PLN, "Desc", "Wroclaw");
 
         //when
         when(tripGroupRepository.findById(anyLong())).thenReturn(Optional.of(tripGroup));
@@ -456,8 +300,7 @@ class TripGroupServiceTest {
     void shouldBeAbleToLeaveGroupTripStage() {
         //given
         mockAuthorizePartOfTheGroupAspect();
-        var tripGroup = new TripGroup("Name", Currency.PLN, "Desc", 1, "Raclawicka",
-                "Wroclaw" , 3, 3 );
+        var tripGroup = new TripGroup("Name", Currency.PLN, "Desc", "Wroclaw");
         tripGroup.setGroupStage(TRIP_STAGE);
         //when
         when(financeProxy.isDebtorOrDebteeToAnyFinancialRequests(anyString(), anyLong(), anyLong())).thenReturn(false);
@@ -475,8 +318,7 @@ class TripGroupServiceTest {
     void shouldBeAbleToLeaveGroupPlanningStage() {
         //given
         mockAuthorizePartOfTheGroupAspect();
-        var tripGroup = new TripGroup("Name", Currency.PLN, "Desc", 1, "Raclawicka",
-                "Wroclaw" , 3, 3 );
+        var tripGroup = new TripGroup("Name", Currency.PLN, "Desc", "Wroclaw");
         tripGroup.setGroupStage(GroupStage.PLANNING_STAGE);
         //when
         when(tripGroupRepository.findById(anyLong())).thenReturn(Optional.of(tripGroup));
@@ -486,16 +328,13 @@ class TripGroupServiceTest {
 
         //then
         verify(userGroupService, times(1)).deleteUserFromGroup(anyLong(), anyLong());
-        verify(availabilityProxy, times(1)).deleteAllAvailabilitiesForUser(any(), anyLong(), anyLong());
-        verify(accommodationProxy, times(1)).deleteAllVotesForUserInGivenGroup(any(), anyLong(), anyLong());
     }
 
     @Test
     void shouldThrowErrorWhenUserHasUnsettledFinancialRequestsTripStage() {
         //given
         mockAuthorizePartOfTheGroupAspect();
-        var tripGroup = new TripGroup("Name", Currency.PLN, "Desc", 1, "Raclawicka",
-                "Wroclaw" , 3, 3 );
+        var tripGroup = new TripGroup("Name", Currency.PLN, "Desc", "Wroclaw");
         tripGroup.setGroupStage(TRIP_STAGE);
         //when
         when(tripGroupRepository.findById(anyLong())).thenReturn(Optional.of(tripGroup));
@@ -531,8 +370,7 @@ class TripGroupServiceTest {
     void shouldThrowErrorWhenUserIsLastCoordinatorTripStage() {
         //given
         mockAuthorizePartOfTheGroupAspect();
-        var tripGroup = new TripGroup("Name", Currency.PLN, "Desc", 1, "Raclawicka",
-                "Wroclaw" , 3, 3 );
+        var tripGroup = new TripGroup("Name", Currency.PLN, "Desc", "Wroclaw");
         tripGroup.setGroupStage(TRIP_STAGE);
         //when
         when(tripGroupRepository.findById(anyLong())).thenReturn(Optional.of(tripGroup));
@@ -552,8 +390,7 @@ class TripGroupServiceTest {
     void shouldThrowErrorWhenUserIsLastCoordinatorPlanningStage() {
         //given
         mockAuthorizePartOfTheGroupAspect();
-        var tripGroup = new TripGroup("Name", Currency.PLN, "Desc", 1, "Raclawicka",
-                "Wroclaw" , 3, 3 );
+        var tripGroup = new TripGroup("Name", Currency.PLN, "Desc", "Wroclaw");
         tripGroup.setGroupStage(GroupStage.PLANNING_STAGE);
         //when
         when(tripGroupRepository.findById(anyLong())).thenReturn(Optional.of(tripGroup));
@@ -564,109 +401,14 @@ class TripGroupServiceTest {
 
         //then
         assertThat(exception.getMessage()).isEqualTo("You cannot leave the group because you are last coordinator in group");
-        verify(availabilityProxy, never()).deleteAllAvailabilitiesForUser(any(), anyLong(), anyLong());
-        verify(accommodationProxy, never()).deleteAllVotesForUserInGivenGroup(any(), anyLong(), anyLong());
         verify(userGroupService, never()).deleteUserFromGroup(anyLong(), anyLong());
     }
 
-    @Test
-    void shouldBeAbleToGetAccommodationDtoWhenSelectedAccommodationNull() {
-        //given
-        Long groupId = 1L;
-        var tripGroup = new TripGroup("Name", Currency.PLN, "Desc", 1, "Raclawicka",
-                "Wroclaw" , 3, 3 );
-        //when
-        when(tripGroupRepository.findById(anyLong())).thenReturn(Optional.of(tripGroup));
-        var actualResult = tripGroupService.getAccommodationDto(groupId);
-
-        //then
-        verify(tripGroupRepository, times(1)).findById(anyLong());
-        verify(accommodationProxy, never()).getAccommodation(anyString(), anyLong());
-        assertThat(actualResult.getAccommodationId()).isEqualTo(null);
-
-    }
-
-    @Test
-    void shouldBeAbleToGetAccommodationDtoWhenSelectedAccommodationIsNotNull() {
-        //given
-        Long groupId = 1L;
-        var tripGroup = new TripGroup("Name", Currency.PLN, "Desc", 1, "Raclawicka",
-                "Wroclaw" , 3, 3 );
-        tripGroup.setSelectedAccommodationId(1L);
-        //when
-        when(tripGroupRepository.findById(anyLong())).thenReturn(Optional.of(tripGroup));
-        when(accommodationProxy.getAccommodation(anyString(), anyLong())).thenReturn(new AccommodationDto());
-        tripGroupService.getAccommodationDto(groupId);
-
-        //then
-        verify(tripGroupRepository, times(1)).findById(anyLong());
-        verify(accommodationProxy, times(1)).getAccommodation(anyString(), anyLong());
-    }
-
-    @Test
-    void shouldReturnExceptionWhenTripGroupNotFound() {
-        //given
-        Long groupId = 1L;
-
-        //when
-        when(tripGroupRepository.findById(anyLong())).thenReturn(Optional.empty());
-        var exception = assertThrows(ApiRequestException.class,
-                () -> tripGroupService.getAccommodationDto(groupId));
-
-        //then
-        verify(tripGroupRepository, times(1)).findById(anyLong());
-        assertThat(exception.getMessage()).isEqualTo("There is no group with given group_id ");
-    }
-
-    @Test
-    void shouldReturnExceptionWhenInvalidGroupId() {
-        //when
-        var exception = assertThrows(IllegalArgumentException.class,
-                () -> tripGroupService.getAccommodationDto(null));
-
-        //then
-        verify(tripGroupRepository, never()).findById(anyLong());
-        assertThat(exception.getMessage()).isEqualTo("Group id is invalid. Id must be a positive number");
-    }
-
-    @Test
-    void shouldBeAbleToSetSelectedAvailability() {
-        //given
-        var tripGroup = new TripGroup("Name", Currency.PLN, "Desc", 1, "Raclawicka",
-                "Wroclaw" , 3, 3 );
-
-        //when
-        when(tripGroupRepository.findById(anyLong())).thenReturn(Optional.of(tripGroup));
-        tripGroupService.setSelectedAvailability(1L,1L, LocalDate.of(2022,10,10), LocalDate.of(2022,10,12));
-
-        //then
-        verify(tripGroupRepository, times(1)).save(tripGroupArgumentCaptor.capture());
-        var resultTripGroup = tripGroupArgumentCaptor.getValue();
-        assertEquals(1L, resultTripGroup.getSelectedSharedAvailability());
-        assertEquals(LocalDate.of(2022,10,10), resultTripGroup.getStartDate());
-        assertEquals(LocalDate.of(2022,10,12), resultTripGroup.getEndDate());
-    }
-
-    @Test
-    void shouldReturnExceptionWhenTripGroupNotFoundInSetSelectedAvailability() {
-        //given
-        Long groupId = 1L;
-
-        //when
-        when(tripGroupRepository.findById(anyLong())).thenReturn(Optional.empty());
-        var exception = assertThrows(ApiRequestException.class,
-                () -> tripGroupService.setSelectedAvailability(1L,1L, LocalDate.of(2022,10,10), LocalDate.of(2022,10,12)));
-
-        //then
-        verify(tripGroupRepository, times(1)).findById(anyLong());
-        assertThat(exception.getMessage()).isEqualTo("There is no group with given group_id ");
-    }
 
     @Test
     void shouldBeAbleToChangeGroupStagePlanningStage() {
         //given
-        var tripGroup = new TripGroup("Name", Currency.PLN, "Desc", 1, "Raclawicka",
-                "Wroclaw" , 3, 3 );
+        var tripGroup = new TripGroup("Name", Currency.PLN, "Desc", "Wroclaw");
         tripGroup.setGroupStage(GroupStage.PLANNING_STAGE);
 
         //when
@@ -682,8 +424,7 @@ class TripGroupServiceTest {
     @Test
     void shouldBeAbleToChangeGroupStageTripStage() {
         //given
-        var tripGroup = new TripGroup("Name", Currency.PLN, "Desc", 1, "Raclawicka",
-                "Wroclaw" , 3, 3 );
+        var tripGroup = new TripGroup("Name", Currency.PLN, "Desc", "Wroclaw");
         tripGroup.setGroupStage(TRIP_STAGE);
 
         //when
@@ -711,35 +452,6 @@ class TripGroupServiceTest {
         assertThat(exception.getMessage()).isEqualTo("There is no group with given group_id ");
     }
 
-    @Test
-    void shouldReturnExceptionWhenTripGroupNotFoundInUnselectAvailability() {
-        //given
-        Long groupId = 1L;
-
-        //when
-        when(tripGroupRepository.findById(anyLong())).thenReturn(Optional.empty());
-        var exception = assertThrows(ApiRequestException.class,
-                () -> tripGroupService.unselectAvailability(groupId));
-
-        //then
-        verify(tripGroupRepository, times(1)).findById(anyLong());
-        assertThat(exception.getMessage()).isEqualTo("There is no group with given group_id ");
-    }
-
-    @Test
-    void shouldReturnExceptionWhenTripGroupNotFoundInUnselectAccommodation() {
-        //given
-        Long groupId = 1L;
-
-        //when
-        when(tripGroupRepository.findById(anyLong())).thenReturn(Optional.empty());
-        var exception = assertThrows(ApiRequestException.class,
-                () -> tripGroupService.unselectAccommodation(groupId));
-
-        //then
-        verify(tripGroupRepository, times(1)).findById(anyLong());
-        assertThat(exception.getMessage()).isEqualTo("There is no group with given group_id ");
-    }
 
     @Test
     void shouldReturnExceptionWhenTripGroupNotFoundInDeleteUserFromGroup() {
@@ -754,40 +466,4 @@ class TripGroupServiceTest {
         verify(tripGroupRepository, times(1)).findById(anyLong());
         assertThat(exception.getMessage()).isEqualTo("There is no group with given group_id ");
     }
-
-    @Test
-    void shouldBeAbleToUnsetSelectedAvailability() {
-        //given
-        var tripGroup = new TripGroup("Name", Currency.PLN, "Desc", 1, "Raclawicka",
-                "Wroclaw" , 3, 3 );
-
-        //when
-        when(tripGroupRepository.findById(anyLong())).thenReturn(Optional.of(tripGroup));
-        when(availabilityProxy.triggerAvailabilityGeneration(anyString(), anyLong())).thenReturn("Str");
-        tripGroupService.unselectAvailability(1L);
-
-        //then
-        verify(tripGroupRepository, times(1)).save(tripGroupArgumentCaptor.capture());
-        var resultTripGroup = tripGroupArgumentCaptor.getValue();
-        assertNull(resultTripGroup.getSelectedSharedAvailability());
-    }
-
-    @Test
-    void shouldBeAbleToUnsetSelectedAccommodation() {
-        //given
-        var tripGroup = new TripGroup("Name", Currency.PLN, "Desc", 1, "Raclawicka",
-                "Wroclaw" , 3, 3 );
-
-        //when
-        when(tripGroupRepository.findById(anyLong())).thenReturn(Optional.of(tripGroup));
-        tripGroupService.unselectAccommodation(1L);
-
-        //then
-        verify(tripGroupRepository, times(1)).save(tripGroupArgumentCaptor.capture());
-        var resultTripGroup = tripGroupArgumentCaptor.getValue();
-        assertNull(resultTripGroup.getSelectedAccommodationId());
-    }
-
-
-
 }
