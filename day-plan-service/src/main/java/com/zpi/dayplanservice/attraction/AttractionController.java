@@ -2,6 +2,7 @@ package com.zpi.dayplanservice.attraction;
 
 import com.zpi.dayplanservice.dto.AttractionCandidateDto;
 import com.zpi.dayplanservice.dto.AttractionPlanDto;
+import com.zpi.dayplanservice.dto.RankByType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +25,15 @@ public class AttractionController {
     @GetMapping("/find")
     public ResponseEntity<List<AttractionCandidateDto>> getCandidates(@RequestParam(name = "name") String name) {
         var attractionCandidates = attractionService.findCandidates(name);
+        return ResponseEntity.ok(attractionCandidates);
+    }
+
+    @GetMapping("/find-nearby")
+    public ResponseEntity<List<AttractionCandidateDto>> getCandidates(@RequestParam(name = "longitude") Double longitude,
+                                                                      @RequestParam(name = "latitude") Double latitude,
+                                                                      @RequestParam(name = "queryCategory", required = false) String queryCategory,
+                                                                      @RequestParam(name = "rankByType", required = false) RankByType rankByType) {
+        var attractionCandidates = attractionService.findNearbyCandidates(longitude, latitude, queryCategory, rankByType);
         return ResponseEntity.ok(attractionCandidates);
     }
 

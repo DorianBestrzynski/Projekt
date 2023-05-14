@@ -4,20 +4,20 @@ import com.google.maps.DistanceMatrixApi;
 import com.google.maps.GeoApiContext;
 import com.google.maps.PlaceDetailsRequest;
 import com.google.maps.PlacesApi;
-import com.google.maps.model.DistanceMatrix;
-import com.google.maps.model.LatLng;
-import com.google.maps.model.PlacesSearchResult;
+import com.google.maps.model.*;
 import com.zpi.dayplanservice.aspects.AuthorizeCoordinator;
 import com.zpi.dayplanservice.aspects.AuthorizePartOfTheGroup;
 import com.zpi.dayplanservice.day_plan.DayPlanService;
 import com.zpi.dayplanservice.dto.AttractionCandidateDto;
 import com.zpi.dayplanservice.dto.AttractionPlanDto;
+import com.zpi.dayplanservice.dto.RankByType;
 import com.zpi.dayplanservice.dto.RouteDto;
 import com.zpi.dayplanservice.exception.ApiRequestException;
 import com.zpi.dayplanservice.mapstruct.MapStructMapper;
 import com.zpi.dayplanservice.proxies.TripGroupProxy;
 import com.zpi.dayplanservice.security.CustomUsernamePasswordAuthenticationToken;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -25,11 +25,13 @@ import javax.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.zpi.dayplanservice.exception.ExceptionInfo.ATTRACTION_NOT_FOUND;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AttractionService {
@@ -43,20 +45,74 @@ public class AttractionService {
 
     private final TripGroupProxy tripGroupProxy;
 
+    private static final int RADIUS_DISTANCE = 50000;
+
     @AuthorizePartOfTheGroup
     public List<Attraction> getAllAttractionsForDay(Long groupId, Long dayPlanId) {
         return dayPlanService.getDayPlanById(dayPlanId).getDayAttractions().stream().toList();
     }
 
     public List<AttractionCandidateDto> findCandidates(String name) {
-        List<AttractionCandidateDto> result = new ArrayList<>();
         var foundCandidates = PlacesApi.textSearchQuery(context, name)
                                        .awaitIgnoreError();
 
-        result = convertToAttractionCandidateDto(foundCandidates.results);
+        var result = convertToAttractionCandidateDto(foundCandidates.results);
         getUrl(result);
         System.out.println(foundCandidates);
         return result;
+    }
+
+    public List<AttractionCandidateDto> findNearbyCandidates(Double longitude, Double latitude, String  queryCategory, RankByType rankByType) {
+        var coordinates = new LatLng(latitude, longitude);
+        var rankBy = parseToRankBy(rankByType);
+
+        var foundCandidates = Optional.ofNullable(queryCategory)
+                .map(category -> findNearbyCandidatesByLocationAndCategory(coordinates, category, rankBy))
+                .orElseGet(() -> findNearbyCandidatesByLocation(coordinates));
+
+        var result = convertToAttractionCandidateDto(foundCandidates.results);
+        getUrl(result);
+        return result;
+    }
+
+    private PlacesSearchResponse findNearbyCandidatesByLocation(LatLng coordinates) {
+            log.info("Coordinates " + coordinates.lat + coordinates.lng);
+            var request = PlacesApi.nearbySearchQuery(context, coordinates);
+            request.radius(RADIUS_DISTANCE);
+
+            return request.awaitIgnoreError();
+    }
+
+    private PlacesSearchResponse findNearbyCandidatesByLocationAndCategory(LatLng coordinates, String category, RankBy rankBy) {
+        try {
+            var placeType = PlaceType.valueOf(category.toUpperCase());
+            log.info("Performing search by location and category");
+            log.info("Place type is: " + placeType);
+            log.info("RankBy type is: " + rankBy);
+            var request =  PlacesApi.nearbySearchQuery(context, coordinates);
+            if (rankBy.equals(RankBy.PROMINENCE)) {
+                request.radius(RADIUS_DISTANCE);
+            }
+            else {
+                request.rankby(rankBy);
+            }
+            request.type(placeType);
+
+            return request.awaitIgnoreError();
+
+        } catch (Exception ex) {
+            log.info("Wrong place type, performing textSearch query");
+            var request = PlacesApi.textSearchQuery(context, category, coordinates);
+            request.radius(RADIUS_DISTANCE);
+            return request.awaitIgnoreError();
+        }
+    }
+
+    private RankBy parseToRankBy(RankByType rankByType) {
+        if (rankByType == null) {
+            return RankBy.PROMINENCE;
+        }
+        return rankByType == RankByType.DISTANCE ? RankBy.DISTANCE : RankBy.PROMINENCE;
     }
 
     @Transactional

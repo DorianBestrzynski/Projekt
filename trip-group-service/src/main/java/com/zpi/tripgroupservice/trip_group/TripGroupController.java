@@ -21,7 +21,6 @@ import java.util.List;
 public class TripGroupController {
     private final TripGroupService tripGroupService;
     private final TripGroupRepository tripGroupRepository;
-    private final UserGroupService userGroupService;
     private final UserGroupRepository userGroupRepository;
 
     @GetMapping("/groups/{userId}")
