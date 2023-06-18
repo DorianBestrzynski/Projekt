@@ -8,10 +8,7 @@ import com.google.maps.model.*;
 import com.zpi.dayplanservice.aspects.AuthorizeCoordinator;
 import com.zpi.dayplanservice.aspects.AuthorizePartOfTheGroup;
 import com.zpi.dayplanservice.day_plan.DayPlanService;
-import com.zpi.dayplanservice.dto.AttractionCandidateDto;
-import com.zpi.dayplanservice.dto.AttractionPlanDto;
-import com.zpi.dayplanservice.dto.RankByType;
-import com.zpi.dayplanservice.dto.RouteDto;
+import com.zpi.dayplanservice.dto.*;
 import com.zpi.dayplanservice.exception.ApiRequestException;
 import com.zpi.dayplanservice.mapstruct.MapStructMapper;
 import com.zpi.dayplanservice.proxies.TripGroupProxy;
@@ -22,10 +19,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -74,6 +68,7 @@ public class AttractionService {
         getUrl(result);
         return result;
     }
+
 
     private PlacesSearchResponse findNearbyCandidatesByLocation(LatLng coordinates) {
             log.info("Coordinates " + coordinates.lat + coordinates.lng);
@@ -180,10 +175,12 @@ public class AttractionService {
         for (AttractionCandidateDto candidate : candidates) {
             var placeDetails = PlacesApi.placeDetails(context, candidate.getPlaceId())
                                         .fields(PlaceDetailsRequest.FieldMask.URL,
-                                                PlaceDetailsRequest.FieldMask.OPENING_HOURS)
+                                                PlaceDetailsRequest.FieldMask.OPENING_HOURS,
+                                                PlaceDetailsRequest.FieldMask.FORMATTED_ADDRESS)
                                         .awaitIgnoreError();
             candidate.setUrl(placeDetails.url.toString());
             candidate.setOpeningHours(new String[] {});
+            candidate.setAddress(placeDetails.formattedAddress);
 
         }
         return candidates;
